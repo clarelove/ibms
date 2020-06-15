@@ -3,6 +3,8 @@ package com.advantech.ibms.service.impl;
 import com.advantech.ibms.POJO.Symbol;
 import com.advantech.ibms.service.DataBindingService;
 import com.advantech.ibms.util.CommonUtil;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Service;
@@ -17,13 +19,36 @@ public class DataBindingServiceImpl implements DataBindingService {
     @Value("${org_id}")
     private int org_id;
     @Override
-    public Symbol[] parse(String json) {
-        System.out.println(url);
+    public JSONObject parse(String path) {
+        path = path.replace(" ","%20");
+        String display = null;
         try{
-            String display = CommonUtil().getDisplay(url+"displays/"+"自来水/設備監控影像.json",org_id);
+            display = CommonUtil.getDisplay(url+path,org_id);
         }catch (IOException e){
             e.printStackTrace();
         }
-        return new Symbol[0];
+        return JSONObject.parseObject(display);
+    }
+
+    @Override
+    public JSONObject replace(String[] target, Object now,JSONObject jsonObject,String [] key,String value) {
+        key = new String[]{"i"};
+        target = new String[]{"i"};
+        now = 666;
+        value = "6192";
+        JSONObject destination ;
+        JSONArray d =  jsonObject.getJSONArray("d");
+        for(int i = 0; i < d.size();i++){
+//            System.out.println(d.getJSONObject(i).toJSONString());
+            destination = d.getJSONObject(i);
+            for(int j = 0;j<key.length-1;j++){
+                destination = destination.getJSONObject(key[j]);
+            }
+            if(value.equals(destination.getString(key[key.length-1]))){
+                System.out.println("true");
+                
+            }
+        }
+        return null;
     }
 }

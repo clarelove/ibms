@@ -13,7 +13,6 @@ public class ApplicationStartup implements ApplicationListener<ContextRefreshedE
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent contextRefreshedEvent) {
-        System.out.println("bridge");
-        dataBindingService.parse("asd");
+        dataBindingService.replace(null,null,dataBindingService.parse("scenes/iBMS demo/研華樓層圖/testforline.json"),null,null);
     }
 }
