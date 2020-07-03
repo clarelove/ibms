@@ -29,7 +29,7 @@ public class HttpClientUtil {
 //        }
 //    }
 
-    public static String postRequest(String uri, List<Header> headerList, HttpEntity requestEntity) throws IOException {
+    public static String postRequest(String uri, List<Header> headerList, HttpEntity requestEntity,boolean cookieRequire) throws IOException {
         CloseableHttpClient httpclient = HttpClients.createDefault();
         HttpPost httpPost = new HttpPost(uri);
         headerList.forEach(o -> {
@@ -42,8 +42,8 @@ public class HttpClientUtil {
             if (statusCode == 200 || statusCode == 201) {
                 HttpEntity entity = response.getEntity();
                 String entityStr = EntityUtils.toString(entity);
-                System.out.println(entityStr);
-//                Header[] header = response.getHeaders("Set-Cookie");
+                if(cookieRequire)
+                    return response.getHeaders("Set-Cookie")[0].getValue();
                 return entityStr;
             }
             throw new IOException("调用请求" + uri + "失败code = " + statusCode);
@@ -68,7 +68,7 @@ public class HttpClientUtil {
                 System.out.println(entityStr);
                 return entityStr;
             }
-            throw new IOException("调用请求" + uri + "失败code = " + statusCode);
+            throw new IOException("调用请求" + uri + "失败code = " + statusCode+ response.toString());
         } finally {
             response.close();
         }
