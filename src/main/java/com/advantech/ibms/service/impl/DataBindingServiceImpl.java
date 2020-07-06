@@ -47,6 +47,7 @@ public class DataBindingServiceImpl implements DataBindingService {
     private String response;
     @Value("${tenant-id}")
     private String tenantId;
+    private int tag = 0;
     @Override
     public String[] targetCompose(String[] topo, String[] sensors, String feature) throws IOException{
         String[] resmap = new String[sensors.length];
@@ -62,7 +63,7 @@ public class DataBindingServiceImpl implements DataBindingService {
         int id;
         String response = null;
         if(flag){
-            map.put("sourceType","apm");
+            map.put("sourceType","APM");
             map.put("formatType","timeseries");
             map.put("scDataType","value");
             String Name = topo[0];
@@ -116,6 +117,7 @@ public class DataBindingServiceImpl implements DataBindingService {
         }
         //maybe change
         id = findid(feature,response);
+        this.tag = id;
         System.out.println("node4"+id);
         if(id == 0){
             System.out.println("+++++++++++++++++++++++++++++++++warning,nothing match++++++++++++++++++++++++++++++++++");
@@ -123,13 +125,13 @@ public class DataBindingServiceImpl implements DataBindingService {
         }
         target.append(id).append("|");
         map.put("Node4",new Node(id,false).toString());
-        map.put("target",target.toString());
-
         for (int i = 0;i<sensors.length;i++) {
             String sensorName = "monitor-"+sensors[i];
+            System.out.println(sensorName);
             target.append(sensorName).append("|real");
             map.put("sensor",sensorName);
             map.put("dataType","real");
+            map.put("target",target.toString());
             resmap[i]=JSONObject.toJSONString(map, SerializerFeature.WriteMapNullValue);
         }
         return resmap;
@@ -139,8 +141,11 @@ public class DataBindingServiceImpl implements DataBindingService {
     public JSONObject parse(String path) {
         path = path.replace(" ","%20");
         String display = null;
+        //因sc与apm的token不同暂时修改 从016登录 从005拿图
+        String temporaryUrl = "https://saas-composer-ibms-eks005.bm.wise-paas.com.cn/";
         try{
-            display = CommonUtil.getDisplay(baseurl+path,org_id);
+            display = CommonUtil.getDisplay(temporaryUrl+path,org_id);
+
         }catch (IOException e){
             e.printStackTrace();
         }
@@ -168,13 +173,19 @@ public class DataBindingServiceImpl implements DataBindingService {
 
         return symbol.getString(path[path.length-1]);
     }
+    public JSONObject setFeature(String [] path,JSONObject symbol,int value){
+        JSONObject res = symbol;
+        for (int i = 0;i<path.length-1;i++) {
+            if(symbol.getJSONObject(path[i])==null)
+                symbol.put(path[i],new JSONObject());
+                symbol = symbol.getJSONObject(path[i]);
+        }
+        symbol.put(path[path.length-1],value);
+        return res;
+    }
     @Override
     public JSONObject replace(String[] workdir, String[] targets, DataSource dataSource1, JSONObject jsonObject, String [] key, String value) {
-//        key = new String[]{"i"};
-//        workdir = new String[]{};
-//        targets = new String[]{"i"};
-//        dataSource = 666;
-//        value = "6192";
+
         JSONObject destination ;
         JSONArray d =  jsonObject.getJSONArray("d");
         for(int i = 0; i < d.size();i++){
@@ -185,16 +196,19 @@ public class DataBindingServiceImpl implements DataBindingService {
             }
             if(value.equals(destination.getString(key[key.length-1]))){
                 //匹配到图标大类后寻找图标名
-                String deviceName = getFeature(new String[]{"s","text"},d.getJSONObject(i));
+                String deviceName = getFeature(new String[]{"p","toolTip"},d.getJSONObject(i));
+                if(deviceName == null)
+                    continue;
                 System.out.println(deviceName+"device");
                 String[] targetArray = new String[targets.length];
                 try{
-                    targetArray = targetCompose(new String[]{"電梯系統","E栋","1层","客梯"},new String[]{"UP","MENT"},deviceName);//ALKU_AEL01
+                    targetArray = targetCompose(new String[]{"照明系統","E栋","1层","LGH"},new String[]{"LGH:CTL"},deviceName);//ALKU_AEL01
                     System.out.println(targetArray);
                 }catch (IOException e){
                     e.printStackTrace();
                 }
                 destination = d.getJSONObject(i);
+                destination = setFeature(new String[]{"p","tag"},destination,this.tag);
                 for(int k = 0;k<workdir.length;k++){
                     if(destination.getJSONObject(workdir[k]) == null){
                         destination.put(workdir[k],new JSONObject());

@@ -23,12 +23,12 @@ public class ApplicationStartup implements ApplicationListener<ContextRefreshedE
 //            e.printStackTrace();
 //        }
         dataBindingService.replace(
-                new String [] {"p","dataBindings","p"},
-                new String [] {"x","y"},
+                new String [] {"p","dataBindings","a"},
+                new String [] {"custom.animatePercentage3D"},
                 new DataSource(),
-                dataBindingService.parse("displays/survey/elevator sensor.json"),
+                dataBindingService.parse("scenes/iBMS demo/研華樓層圖/照明/1F.json"),
                 new String []{"p","displayName"},
-                "ALKU_AEL01"
+                "燈s"
         );
 
     }
