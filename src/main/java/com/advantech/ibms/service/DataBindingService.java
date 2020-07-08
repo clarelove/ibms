@@ -10,8 +10,8 @@ import java.util.Map;
 
 public interface DataBindingService {
      JSONObject parse(String path);
-     JSONObject replace(String[] workdir, String[] targets, DataSource dataSource, JSONObject jsonObject, String [] key, String value);
+     JSONObject replace(String[] workdir, String[] targets, DataSource dataSource, JSONObject jsonObject, String [] key, Map<String,String> symbol,String[] sensor);
      boolean update(String json,String path);
      String login();
-     String[] targetCompose(String [] topo, String[] sensors, String feature) throws IOException;
+     String[] targetCompose(String [] topo, String[] sensors, String feature,String displayName) throws IOException;
 }

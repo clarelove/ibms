@@ -8,6 +8,8 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 public class ApplicationStartup implements ApplicationListener<ContextRefreshedEvent> {
@@ -17,18 +19,21 @@ public class ApplicationStartup implements ApplicationListener<ContextRefreshedE
     @Override
     public void onApplicationEvent(ContextRefreshedEvent contextRefreshedEvent) {
         dataBindingService.login();
-//        try{
-//            dataBindingService.targetCompose(new String[]{"风机盘管","风机盘管","31层"},new String[]{"asd","sss"},"低区设备间");
-//        }catch(IOException e){
-//            e.printStackTrace();
-//        }
+        Map<String,String> map = new HashMap<>();
+        map.put("CWP","PUMPS");
+        map.put("CHP","PUMPS");
+        map.put("二次冰水泵","EKG");
+        map.put("冷水機組","CHU");
+        map.put("冷卻水塔","PUMP");
+
         dataBindingService.replace(
                 new String [] {"p","dataBindings","a"},
                 new String [] {"custom.animatePercentage3D"},
                 new DataSource(),
-                dataBindingService.parse("scenes/iBMS demo/研華樓層圖/照明/1F.json"),
+                dataBindingService.parse("scenes/modify/冷源2.json"),
                 new String []{"p","displayName"},
-                "燈s"
+                map,
+                new String [] {":RUN"}
         );
 
     }

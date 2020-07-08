@@ -65,7 +65,7 @@ public class HttpClientUtil {
             if (statusCode == 200 || statusCode == 201) {
                 HttpEntity entity = response.getEntity();
                 String entityStr = EntityUtils.toString(entity);
-                System.out.println(entityStr);
+//                System.out.println(entityStr);
                 return entityStr;
             }
             throw new IOException("调用请求" + uri + "失败code = " + statusCode+ response.toString());

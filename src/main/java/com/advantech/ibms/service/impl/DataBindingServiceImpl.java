@@ -39,7 +39,7 @@ public class DataBindingServiceImpl implements DataBindingService {
     private String userName = "zhihao.jia@advantech.com.cn";
     @Value("${password}")
     private String password;
-    private boolean flag = true;
+    private String flag = null;
     private int id;
     private LinkedHashMap<String,String> globalobject;
     private StringBuffer targetstring;
@@ -49,20 +49,21 @@ public class DataBindingServiceImpl implements DataBindingService {
     private String tenantId;
     private int tag = 0;
     @Override
-    public String[] targetCompose(String[] topo, String[] sensors, String feature) throws IOException{
+    public String[] targetCompose(String[] topo, String[] sensors, String feature,String displayName) throws IOException{
         String[] resmap = new String[sensors.length];
         String uri;
         List<Header> headerList = new ArrayList<>();
         headerList.add(new BasicHeader("Authorization", "Bearer " + accesstoken));
-        System.out.println("Bearer "+accesstoken);
+//        System.out.println("Bearer "+accesstoken);
         headerList.add(new BasicHeader("Content-Type","application/json"));
         headerList.add(new BasicHeader("tenant-id",tenantId));
-//        headerList.add(new BasicHeader("host",""));
         StringBuffer target = new StringBuffer();
         LinkedHashMap<String,String> map = new LinkedHashMap<String,String>();
         int id;
         String response = null;
-        if(flag){
+        if(!displayName.equals(flag)){
+            System.out.println(flag+"not equals"+displayName);
+            flag = displayName;
             map.put("sourceType","APM");
             map.put("formatType","timeseries");
             map.put("scDataType","value");
@@ -74,7 +75,7 @@ public class DataBindingServiceImpl implements DataBindingService {
             uri = apmurl+"/topo/root/node?topoName="+topo[0];
             response = HttpClientUtil.getRequest(uri,headerList);
             id =findid(Name,response);
-            System.out.println("root"+id);
+//            System.out.println("root"+id);
             target.append(id).append("|");
             map.put("root",new Node(id,true).toString());
 
@@ -82,7 +83,7 @@ public class DataBindingServiceImpl implements DataBindingService {
             uri = apmurl+"/topo/progeny/node?nodeId="+id+"&type=child";
             response = HttpClientUtil.getRequest(uri,headerList);
             id = findid(topo[1],response);
-            System.out.println("node1"+id);
+//            System.out.println("node1"+id);
             target.append(id).append("|");
             map.put("Node1",new Node(id,true).toString());
 
@@ -90,21 +91,20 @@ public class DataBindingServiceImpl implements DataBindingService {
             uri = apmurl+"/topo/progeny/node?nodeId="+id+"&type=child";
             response = HttpClientUtil.getRequest(uri,headerList);
             id = findid(topo[2],response);
-            System.out.println("node2"+id);
+//            System.out.println("node2"+id);
             target.append(id).append("|");
             map.put("Node2",new Node(id,true).toString());
 
             uri = apmurl+"/topo/progeny/node?nodeId="+id+"&type=child";
             response = HttpClientUtil.getRequest(uri,headerList);
             id = findid(topo[3],response);
-            System.out.println("node3"+id);
+//            System.out.println("node3"+id);
             target.append(id).append("|");
             map.put("Node3",new Node(id,true).toString());
 
 
             uri = apmurl+"/topo/progeny/node?nodeId="+id+"&type=child";
             response = HttpClientUtil.getRequest(uri,headerList);
-            flag = false;
             this.id = id;
             this.globalobject = map;
             this.targetstring = new StringBuffer(target);
@@ -122,12 +122,14 @@ public class DataBindingServiceImpl implements DataBindingService {
         if(id == 0){
             System.out.println("+++++++++++++++++++++++++++++++++warning,nothing match++++++++++++++++++++++++++++++++++");
 //            System.exit(0);
+            return null;
+
         }
         target.append(id).append("|");
         map.put("Node4",new Node(id,false).toString());
         for (int i = 0;i<sensors.length;i++) {
             String sensorName = "monitor-"+sensors[i];
-            System.out.println(sensorName);
+//            System.out.println(sensorName);
             target.append(sensorName).append("|real");
             map.put("sensor",sensorName);
             map.put("dataType","real");
@@ -184,7 +186,7 @@ public class DataBindingServiceImpl implements DataBindingService {
         return res;
     }
     @Override
-    public JSONObject replace(String[] workdir, String[] targets, DataSource dataSource1, JSONObject jsonObject, String [] key, String value) {
+    public JSONObject replace(String[] workdir,String [] targets, DataSource dataSource1, JSONObject jsonObject, String [] key, Map<String,String> symbol,String[] sensors) {
 
         JSONObject destination ;
         JSONArray d =  jsonObject.getJSONArray("d");
@@ -194,34 +196,46 @@ public class DataBindingServiceImpl implements DataBindingService {
             for(int j = 0;j<key.length-1;j++){
                 destination = destination.getJSONObject(key[j]);
             }
-            if(value.equals(destination.getString(key[key.length-1]))){
-                //匹配到图标大类后寻找图标名
-                String deviceName = getFeature(new String[]{"p","toolTip"},d.getJSONObject(i));
-                if(deviceName == null)
-                    continue;
-                System.out.println(deviceName+"device");
-                String[] targetArray = new String[targets.length];
-                try{
-                    targetArray = targetCompose(new String[]{"照明系統","E栋","1层","LGH"},new String[]{"LGH:CTL"},deviceName);//ALKU_AEL01
-                    System.out.println(targetArray);
-                }catch (IOException e){
-                    e.printStackTrace();
-                }
-                destination = d.getJSONObject(i);
-                destination = setFeature(new String[]{"p","tag"},destination,this.tag);
-                for(int k = 0;k<workdir.length;k++){
-                    if(destination.getJSONObject(workdir[k]) == null){
-                        destination.put(workdir[k],new JSONObject());
+            Iterator<Map.Entry<String,String>> symbolIterator = symbol.entrySet().iterator();
+            while (symbolIterator.hasNext()) {
+
+                Map.Entry<String,String> entry = symbolIterator.next();
+                if (entry.getKey().equals(destination.getString(key[key.length - 1]))) {
+                    //匹配到图标大类后寻找图标名
+                    String deviceName = getFeature(new String[]{"p", "toolTip"}, d.getJSONObject(i));
+                    if (deviceName == null)
+                        continue;
+                    System.out.println(deviceName + "device");
+//                String[] targetArray = new String[targets.length];
+                    String[] targetArray = null;
+                    try {
+                        String[] topo = new String[]{"冷源系統", "E栋", "floors",entry.getValue()};
+                        String [] clone = sensors.clone();
+                        for(int sensorIndex = 0;sensorIndex<clone.length;sensorIndex++){
+                            clone[sensorIndex] = entry.getValue()+clone[sensorIndex];
+//                            System.out.println(sensors[sensorIndex]);
+                        }
+                        targetArray = targetCompose(topo, clone, deviceName,entry.getKey());//ALKU_AEL01
+//                        System.out.println(targetArray);
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
-                    destination = destination.getJSONObject(workdir[k]);
-                }
-                for (int index = 0;index<targets.length;index++) {
-                    DataSource dataSource = new DataSource();
-                    dataSource.addTarget(JSONObject.parseObject(targetArray[index], Feature.OrderedField));
-                    destination.put(targets[index],dataSource);
+                    destination = d.getJSONObject(i);
+                    destination = setFeature(new String[]{"p", "tag"}, destination, this.tag);
+                    for (int k = 0; k < workdir.length; k++) {
+                        if (destination.getJSONObject(workdir[k]) == null) {
+                            destination.put(workdir[k], new JSONObject());
+                        }
+                        destination = destination.getJSONObject(workdir[k]);
+                    }
+                    for (int index = 0; index < targets.length; index++) {
+                        DataSource dataSource = new DataSource();
+                        dataSource.addTarget(JSONObject.parseObject(targetArray[index], Feature.OrderedField));
+                        destination.put(targets[index], dataSource);
+                    }
                 }
             }
-        }
+            }
         System.out.println(JSONObject.toJSONString(jsonObject,SerializerFeature.DisableCircularReferenceDetect));
         return jsonObject;
     }
