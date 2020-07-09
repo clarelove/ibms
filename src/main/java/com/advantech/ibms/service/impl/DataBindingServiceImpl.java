@@ -128,12 +128,13 @@ public class DataBindingServiceImpl implements DataBindingService {
         target.append(id).append("|");
         map.put("Node4",new Node(id,false).toString());
         for (int i = 0;i<sensors.length;i++) {
+            StringBuffer target1  = new StringBuffer(target);
             String sensorName = "monitor-"+sensors[i];
 //            System.out.println(sensorName);
-            target.append(sensorName).append("|real");
+            target1.append(sensorName).append("|real");
             map.put("sensor",sensorName);
             map.put("dataType","real");
-            map.put("target",target.toString());
+            map.put("target",target1.toString());
             resmap[i]=JSONObject.toJSONString(map, SerializerFeature.WriteMapNullValue);
         }
         return resmap;
@@ -172,8 +173,19 @@ public class DataBindingServiceImpl implements DataBindingService {
                 return "null";
             }
         }
+        String res = symbol.getString(path[path.length-1]);
+//        return regExp(res);
+        return res;
+    }
 
-        return symbol.getString(path[path.length-1]);
+    public String regExp(String name){
+        String [] nameArray = name.split("-");
+        String head = nameArray[0].replaceFirst("M","ALKU_AFM");
+        int number = Integer.parseInt(nameArray[1]);
+        StringBuffer tail = new StringBuffer(String.valueOf(number / 100));
+        tail.append(String.valueOf(number % 100 / 10));
+        tail.append(String.valueOf(number % 100 % 10));
+        return head+tail;
     }
     public JSONObject setFeature(String [] path,JSONObject symbol,int value){
         JSONObject res = symbol;
@@ -186,7 +198,7 @@ public class DataBindingServiceImpl implements DataBindingService {
         return res;
     }
     @Override
-    public JSONObject replace(String[] workdir,String [] targets, DataSource dataSource1, JSONObject jsonObject, String [] key, Map<String,String> symbol,String[] sensors) {
+    public JSONObject replace(String[] workdir,String [] targets, DataSource dataSource1, JSONObject jsonObject, String [] key, Map<String,String> symbol,String[] sensors,String [] topo) {
 
         JSONObject destination ;
         JSONArray d =  jsonObject.getJSONArray("d");
@@ -198,40 +210,42 @@ public class DataBindingServiceImpl implements DataBindingService {
             }
             Iterator<Map.Entry<String,String>> symbolIterator = symbol.entrySet().iterator();
             while (symbolIterator.hasNext()) {
-
                 Map.Entry<String,String> entry = symbolIterator.next();
-                if (entry.getKey().equals(destination.getString(key[key.length - 1]))) {
+//                System.out.println("key"+entry.getKey());
+                if (entry.getValue().equals(destination.getString(key[key.length - 1]))) {
                     //匹配到图标大类后寻找图标名
-                    String deviceName = getFeature(new String[]{"p", "toolTip"}, d.getJSONObject(i));
+                    String deviceName = getFeature(new String[]{"a", "device_number"}, d.getJSONObject(i));
+//                    String deviceName = getFeature(new String[]{"p", "toolTip"}, d.getJSONObject(i));
                     if (deviceName == null)
                         continue;
-                    System.out.println(deviceName + "device");
+                    System.out.println(deviceName + "device" + entry.getKey());
 //                String[] targetArray = new String[targets.length];
                     String[] targetArray = null;
                     try {
-                        String[] topo = new String[]{"冷源系統", "E栋", "floors",entry.getValue()};
+                        topo[3] = entry.getKey();
                         String [] clone = sensors.clone();
                         for(int sensorIndex = 0;sensorIndex<clone.length;sensorIndex++){
-                            clone[sensorIndex] = entry.getValue()+clone[sensorIndex];
+                            clone[sensorIndex] = entry.getKey()+clone[sensorIndex];
 //                            System.out.println(sensors[sensorIndex]);
                         }
-                        targetArray = targetCompose(topo, clone, deviceName,entry.getKey());//ALKU_AEL01
-//                        System.out.println(targetArray);
+                        targetArray = targetCompose(topo, clone, "ALKA_"+deviceName,entry.getKey());//ALKU_AEL01
+                        System.out.println("target:"+ targetArray);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                    destination = d.getJSONObject(i);
-                    destination = setFeature(new String[]{"p", "tag"}, destination, this.tag);
+                    JSONObject destination1 = d.getJSONObject(i);
+                    if(this.tag != 0)
+                    destination1 = setFeature(new String[]{"p", "tag"}, destination1, this.tag);
                     for (int k = 0; k < workdir.length; k++) {
-                        if (destination.getJSONObject(workdir[k]) == null) {
-                            destination.put(workdir[k], new JSONObject());
+                        if (destination1.getJSONObject(workdir[k]) == null) {
+                            destination1.put(workdir[k], new JSONObject());
                         }
-                        destination = destination.getJSONObject(workdir[k]);
+                        destination1 = destination1.getJSONObject(workdir[k]);
                     }
-                    for (int index = 0; index < targets.length; index++) {
+                    for (int index = 0; targetArray!=null && index < targets.length; index++) {
                         DataSource dataSource = new DataSource();
                         dataSource.addTarget(JSONObject.parseObject(targetArray[index], Feature.OrderedField));
-                        destination.put(targets[index], dataSource);
+                        destination1.put(targets[index], dataSource);
                     }
                 }
             }
