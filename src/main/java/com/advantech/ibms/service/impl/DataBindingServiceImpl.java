@@ -152,7 +152,11 @@ public class DataBindingServiceImpl implements DataBindingService {
         }catch (IOException e){
             e.printStackTrace();
         }
-        return JSONObject.parseObject(display);
+        LinkedHashMap<String,String> map ;
+        map = JSONObject.parseObject(display,LinkedHashMap.class, Feature.OrderedField);
+        JSONObject jsonObject=new JSONObject(true);
+        jsonObject.putAll(map);
+        return jsonObject;
     }
     private Integer  findid(String Name,String response) throws IOException{
         JSONArray jSONArray = JSONArray.parseArray(response);
@@ -198,7 +202,7 @@ public class DataBindingServiceImpl implements DataBindingService {
         return res;
     }
     @Override
-    public JSONObject replace(String[] workdir,String [] targets, DataSource dataSource1, JSONObject jsonObject, String [] key, Map<String,String> symbol,String[] sensors,String [] topo) {
+    public JSONObject replace(String[] workdir,String [] targets, DataSource dataSource1, JSONObject jsonObject, String [] key, Map<String,String> symbol,String[] sensors,String [] topo,String [] feature) {
 
         JSONObject destination ;
         JSONArray d =  jsonObject.getJSONArray("d");
@@ -214,7 +218,7 @@ public class DataBindingServiceImpl implements DataBindingService {
 //                System.out.println("key"+entry.getKey());
                 if (entry.getValue().equals(destination.getString(key[key.length - 1]))) {
                     //匹配到图标大类后寻找图标名
-                    String deviceName = getFeature(new String[]{"a", "device_number"}, d.getJSONObject(i));
+                    String deviceName = getFeature(feature, d.getJSONObject(i));
 //                    String deviceName = getFeature(new String[]{"p", "toolTip"}, d.getJSONObject(i));
                     if (deviceName == null)
                         continue;
@@ -224,11 +228,10 @@ public class DataBindingServiceImpl implements DataBindingService {
                     try {
                         topo[3] = entry.getKey();
                         String [] clone = sensors.clone();
-                        for(int sensorIndex = 0;sensorIndex<clone.length;sensorIndex++){
-                            clone[sensorIndex] = entry.getKey()+clone[sensorIndex];
-//                            System.out.println(sensors[sensorIndex]);
-                        }
-                        targetArray = targetCompose(topo, clone, "ALKA_"+deviceName,entry.getKey());//ALKU_AEL01
+//                        for(int sensorIndex = 0;sensorIndex<clone.length;sensorIndex++){
+//                            clone[sensorIndex] = entry.getKey()+clone[sensorIndex];
+//                        }
+                        targetArray = targetCompose(topo, clone, deviceName,entry.getKey());//ALKU_AEL01
                         System.out.println("target:"+ targetArray);
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -250,7 +253,7 @@ public class DataBindingServiceImpl implements DataBindingService {
                 }
             }
             }
-        System.out.println(JSONObject.toJSONString(jsonObject,SerializerFeature.DisableCircularReferenceDetect));
+        System.out.println(JSONObject.toJSONString(jsonObject,SerializerFeature.DisableCircularReferenceDetect,SerializerFeature.WriteMapNullValue));
         return jsonObject;
     }
 
