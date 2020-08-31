@@ -148,7 +148,8 @@ public class DataBindingServiceImpl implements DataBindingService {
         String temporaryUrl = "https://saas-composer-ibms-eks005.bm.wise-paas.com.cn/";
         try{
             display = CommonUtil.getDisplay(temporaryUrl+path,org_id);
-
+            System.out.println(display);
+            System.exit(0);
         }catch (IOException e){
             e.printStackTrace();
         }

@@ -75,11 +75,11 @@ public class ApplicationStartup implements ApplicationListener<ContextRefreshedE
                 new String [] {"p","dataBindings","a"},
                 new String [] {"custom.animatePercentage3D"},
                 new DataSource(),
-                dataBindingService.parse("scenes/iBMS demo/研華樓層圖/照明/B3.json"),
+                dataBindingService.parse("scenes/iBMS demo/研華樓層圖/照明/B1停車場.json"),
                 new String []{"p","displayName"},
                 map,
                 new String [] {"LGH:ST"},
-                new String [] {"照明系統","E栋","地下3层",null},
+                new String [] {"照明系統","E栋","地下1层",null},
                 new String [] {"p", "toolTip"}
         );
 
